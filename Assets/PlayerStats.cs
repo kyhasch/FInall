@@ -1,12 +1,13 @@
 using UnityEngine;
+using TMPro;  // Add this for TextMeshPro
 using UnityEngine.UI;
 
 public class PlayerStats : MonoBehaviour
 {
     public static PlayerStats instance;
 
-    public int money = 200;
-    public Text moneyText;
+    public int money = 300;
+    public TextMeshProUGUI moneyText;  // Changed to TextMeshProUGUI
 
     void Awake()
     {

@@ -37,7 +37,9 @@ public class Enemy : MonoBehaviour
         wavepointIndex++;
         if (wavepointIndex >= Waypoints_script.points.Length)
         {
-            Destroy(gameObject); // Reached end
+            // Notify GameManager that an enemy has reached the goal
+            GameManager.instance.EnemyReachedEnd();
+            Destroy(gameObject); // Reached end, destroy the enemy
             return;
         }
 
@@ -55,9 +57,8 @@ public class Enemy : MonoBehaviour
     }
 
     void Die()
-{
-    PlayerStats.instance.EarnMoney(5);
-    Destroy(gameObject);
-}
-
+    {
+        PlayerStats.instance.EarnMoney(5);  // Reward player for killing the enemy
+        Destroy(gameObject);  // Destroy the enemy object
+    }
 }
