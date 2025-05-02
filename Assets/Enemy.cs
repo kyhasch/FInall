@@ -4,7 +4,11 @@ public class Enemy : MonoBehaviour
 {
     private Transform target;
     private int wavepointIndex = 0;
+
+    [Header("Movement")]
     public float speed = 5f;
+    private float originalSpeed;
+    private float slowMultiplier = 1f;
 
     [Header("Enemy Stats")]
     public float maxHealth = 100f;
@@ -12,19 +16,33 @@ public class Enemy : MonoBehaviour
 
     void Start()
     {
+        originalSpeed = speed;
         currentHealth = maxHealth;
         target = Waypoints_script.points[0];
     }
 
     void Update()
     {
-        MoveToNextWaypoint();
+        float currentSpeed = originalSpeed * slowMultiplier;
+        MoveToNextWaypoint(currentSpeed);
+
+        // Reset slow multiplier at end of frame
+        slowMultiplier = 1f;
     }
 
-    void MoveToNextWaypoint()
+    void MoveToNextWaypoint(float currentSpeed)
     {
         Vector3 dir = target.position - transform.position;
-        transform.Translate(dir.normalized * speed * Time.deltaTime, Space.World);
+        dir.y = 0f; // Ensure we only rotate on the horizontal plane
+
+        // 🔁 Rotate to face direction
+        if (dir != Vector3.zero)
+        {
+            Quaternion lookRotation = Quaternion.LookRotation(dir);
+            transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * 5f);
+        }
+
+        transform.Translate(dir.normalized * currentSpeed * Time.deltaTime, Space.World);
 
         if (Vector3.Distance(transform.position, target.position) <= 0.2f)
         {
@@ -37,9 +55,8 @@ public class Enemy : MonoBehaviour
         wavepointIndex++;
         if (wavepointIndex >= Waypoints_script.points.Length)
         {
-            // Notify GameManager that an enemy has reached the goal
             GameManager.instance.EnemyReachedEnd();
-            Destroy(gameObject); // Reached end, destroy the enemy
+            Destroy(gameObject);
             return;
         }
 
@@ -58,7 +75,12 @@ public class Enemy : MonoBehaviour
 
     void Die()
     {
-        PlayerStats.instance.EarnMoney(5);  // Reward player for killing the enemy
-        Destroy(gameObject);  // Destroy the enemy object
+        PlayerStats.instance.EarnMoney(5);
+        Destroy(gameObject);
+    }
+
+    public void ApplySlow(float factor)
+    {
+        slowMultiplier = Mathf.Min(slowMultiplier, factor);
     }
 }

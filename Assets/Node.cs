@@ -2,7 +2,6 @@ using UnityEngine;
 
 public class Node : MonoBehaviour
 {
-    public GameObject turretPrefab;  // The prefab of the turret to place
     public bool isOccupied = false;  // To check if a turret is already placed
     public GameObject turret = null; // Reference to the turret instance
 
@@ -15,36 +14,71 @@ public class Node : MonoBehaviour
         startColor = rend.material.color;  // Store original color for reset
     }
 
-    // Place the turret on the node
-    public void PlaceTurret()
+    void OnMouseDown()
     {
-        if (isOccupied)
+        // 🟨 Handle Sell Mode
+        if (UIManager.instance != null && UIManager.instance.isSellMode)
         {
-            Debug.Log("Node already occupied.");
-            return;
+            if (isOccupied && turret != null)
+            {
+                Destroy(turret);
+                turret = null;
+                isOccupied = false;
+                ChangeNodeColor(startColor);
+
+                PlayerStats.instance.EarnMoney(50);  // Flat refund (or logic based on upgrade state)
+
+                UIManager.instance.isSellMode = false;
+                Debug.Log("Tower sold. Sell mode exited.");
+            }
+            else
+            {
+                Debug.Log("No turret to sell on this node.");
+                UIManager.instance.isSellMode = false; // Optional: still exit sell mode if nothing to sell
+            }
+
+            return; // Skip placement logic if selling
         }
 
-        turret = Instantiate(turretPrefab, transform.position, Quaternion.identity);
-        isOccupied = true;
-
-        ChangeNodeColor(Color.red);  // Change color when occupied
+        // 🟩 Place turret if not in sell mode
+    if (!isOccupied)
+{
+    GameObject turretToBuild = TurretSelector.instance.selectedTurretPrefab;
+    if (turretToBuild == null)
+    {
+        Debug.LogWarning("No turret selected from UI.");
+        return;
     }
 
-    // Reset the node (e.g., if turret is sold or destroyed)
+    int turretCost = 100;
+    if (PlayerStats.instance.money < turretCost)
+    {
+        Debug.Log("Not enough money to build turret.");
+        return;
+    }
+
+    PlayerStats.instance.SpendMoney(turretCost);
+    turret = Instantiate(turretToBuild, transform.position, Quaternion.identity);
+    isOccupied = true;
+
+    ChangeNodeColor(Color.red);
+}
+
+    }
+
     public void ResetNode()
     {
         if (turret != null)
         {
-            Destroy(turret);  // Destroy the turret instance
-            turret = null;  // Nullify the turret reference
-            isOccupied = false;  // Mark the node as unoccupied
-            ChangeNodeColor(startColor);  // Reset node color
+            Destroy(turret);
+            turret = null;
+            isOccupied = false;
+            ChangeNodeColor(startColor);
         }
     }
 
-    // Change the color of the node to indicate its state (occupied or not)
     private void ChangeNodeColor(Color color)
     {
-        rend.material.color = color;  // Change the material color of the node
+        rend.material.color = color;
     }
 }
